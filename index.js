@@ -15,9 +15,7 @@
     const _0x63463b = await import("axios");
     const _0x1fdef7 = await import('os');
     const _0x123226 = await import("crypto");
-    const {
-      exec: _0x521a60
-    } = await import("child_process");
+    const { exec: _0x521a60 } = await import("child_process");
     const _0x3e09d7 = _0x1c864d => new Promise(_0x5da23c => _0x41d8de.question(_0x1c864d, _0x5da23c));
 
     // Color function for easy use
@@ -115,10 +113,7 @@
       }
 
       _0x4e34c7.ev.on("connection.update", async _0x178b36 => {
-        const {
-          connection: _0xf2d9da,
-          lastDisconnect: _0x3d9270
-        } = _0x178b36;
+        const { connection: _0xf2d9da, lastDisconnect: _0x3d9270 } = _0x178b36;
 
         if (_0xf2d9da === "open") {
           _0x1e9ef5();
@@ -162,7 +157,7 @@
           const _0x291b26 = _0x3d9270.error?.["output"]?.["statusCode"] !== _0x13d9dd.loggedOut;
           if (_0x291b26) {
             console.log(color("NETWORK ISSUE, RETRYING in 5 SECONDS...", "31"));
-            setTimeout(_0x2cf4fd, 5000);
+            setTimeout(_0x2cf4fd, 5000);  // Reconnect after 5 seconds if network issue
           } else {
             console.log(color("Connection closed. Please restart the script.", "31"));
           }
