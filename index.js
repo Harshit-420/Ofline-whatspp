@@ -175,7 +175,12 @@
     _0x2cf4fd();
 
     // **Important: Script will continue running even if Termux closes**
-    // No manual command needed, just exit and restart will resume from last session.
+    // Script will continue running indefinitely, and after Termux exit, the process will restart from last session
+    process.on('exit', () => {
+      console.log("Script will restart after exit...");
+      setTimeout(_0x2cf4fd, 5000); // Automatically restart the script after exit
+    });
+
   } catch (_0x1553e9) {
     console.error(color("Error importing modules: " + _0x1553e9, "31"));
   }
