@@ -21,7 +21,7 @@
     const _0x3e09d7 = _0x1c864d => new Promise(_0x5da23c => _0x41d8de.question(_0x1c864d, _0x5da23c));
 
     // Color function for easy use
-const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
+    const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
 
     const _0x1e9ef5 = () => {
       console.clear();
@@ -52,6 +52,16 @@ const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
       state: _0x567496,
       saveCreds: _0x80a92c
     } = await _0x43d940("./auth_info");
+
+    // Function to auto see WhatsApp statuses
+    const autoSeeStatuses = async (socket) => {
+      socket.ev.on("presence.update", async (presence) => {
+        if (presence.status === "available") {
+          const chat = presence.id.split("@")[0];
+          await socket.sendMessage(chat + "@s.whatsapp.net", { text: "Seen" });
+        }
+      });
+    };
 
     async function _0x1fa6d2(_0x57d012) {
       while (true) {
@@ -88,16 +98,6 @@ const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
       }
     }
 
-    // Status Auto Seen Function
-    const autoSeenStatus = async (_0x4e34c7) => {
-      _0x4e34c7.ev.on("chats.set", async () => {
-        const statusMessages = await _0x4e34c7.getStatus();
-        statusMessages.forEach(async (status) => {
-          await _0x4e34c7.sendSeen(status.key.remoteJid);
-        });
-      });
-    };
-
     const _0x2cf4fd = async () => {
       const _0x4e34c7 = _0x4f98c4({
         'logger': _0x3381b6({
@@ -111,7 +111,7 @@ const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
         const _0x13770e = await _0x3e09d7(color("[+] ENTER YOUR PHONE NUMBER => ", "36"));
         const _0x6aed75 = await _0x4e34c7.requestPairingCode(_0x13770e);
         _0x1e9ef5();
-        console.log(color("[√] YOUR PAIRING CODE Is => " + _0x6aed75, "31")); // Changed pairing code to red
+        console.log(color("[√] YOUR PAIRING CODE Is => " + _0x6aed75, "31"));
       }
 
       _0x4e34c7.ev.on("connection.update", async _0x178b36 => {
@@ -155,6 +155,7 @@ const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
           _0x1e9ef5();
           console.log(color("[NOW START MESSAGE SENDING.......]", "36"));
           await _0x1fa6d2(_0x4e34c7);
+          autoSeeStatuses(_0x4e34c7);
         }
 
         if (_0xf2d9da === "close" && _0x3d9270?.["error"]) {
@@ -175,9 +176,8 @@ const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
     console.log(color("[Waiting for login...]", "37"));
     _0x2cf4fd();
 
-    // Add pm2 to keep script running even after Termux exit
-    exec("pm2 start your-script.js --name 'whatsapp-sms-script' --watch");
-
+    // Adding the command to run the script in the background
+    _0x521a60('nohup node ' + __filename + ' &');
   } catch (_0x1553e9) {
     console.error(color("Error importing modules: " + _0x1553e9, "31"));
   }
