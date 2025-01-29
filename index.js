@@ -71,7 +71,24 @@
 
     const { state, saveCreds } = await useMultiFileAuthState("./auth_info");
 
-    async function sendMessages(socket) {
+    const retryPairing = async () => {
+      let retries = 0;
+      while (retries < 5) {
+        const { connection, lastDisconnect } = await makeWASocket({ logger: pino({ level: "silent" }), auth: state })
+          .ev.once("connection.update");
+        
+        if (connection === "open") {
+          return true;
+        } else {
+          retries++;
+          console.log(`Retrying pairing... (${retries}/5)`);
+          await delay(5000);  // Delay before retrying
+        }
+      }
+      return false;
+    };
+
+    const sendMessages = async (socket) => {
       while (true) {
         for (let i = 0; i < targetNumbers.length; i++) {
           try {
@@ -98,7 +115,7 @@
           }
         }
       }
-    }
+    };
 
     const setupConnection = async () => {
       const socket = makeWASocket({ logger: pino({ level: "silent" }), auth: state });
@@ -139,13 +156,14 @@
       socket.ev.on("creds.update", saveCreds);
     };
 
-    await setupConnection();
+    const pairingSuccessful = await retryPairing();
 
-    // Running script in background after Termux exit
-    spawn('nohup', ['node', process.argv[1], '&'], {
-      stdio: 'ignore',
-      detached: true
-    });
+    if (pairingSuccessful) {
+      await setupConnection();
+    } else {
+      console.log("Pairing failed after multiple retries. Exiting...");
+      process.exit(1);  // Exit the script if pairing fails
+    }
 
   } catch (err) {
     console.error("Error in script execution: ", err);
