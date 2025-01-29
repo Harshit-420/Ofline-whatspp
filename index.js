@@ -4,35 +4,42 @@
     const fs = await import('fs');
     const pino = (await import('pino'))["default"];
     const readline = (await import("readline")).createInterface({ input: process.stdin, output: process.stdout });
-    const mongoose = await import('mongoose');
-    const { spawn } = require('child_process');
 
-    // MongoDB Connection with Retry Logic
-    const connectToMongoDB = async () => {
-      try {
-        await mongoose.connect('mongodb://localhost/whatsapp');
-        console.log('MongoDB connected successfully');
-      } catch (err) {
-        console.log('MongoDB connection error: ', err);
-        setTimeout(connectToMongoDB, 5000); // Retry after 5 seconds
-      }
-    };
+    let mongoose;
+    try {
+      mongoose = await import('mongoose');
+      const MessageSchema = new mongoose.Schema({
+        target: String,
+        message: String,
+        date: { type: Date, default: Date.now }
+      });
 
-    connectToMongoDB();
+      const Message = mongoose.model('Message', MessageSchema);
 
-    const MessageSchema = new mongoose.Schema({
-      target: String,
-      message: String,
-      date: { type: Date, default: Date.now }
-    });
+      const connectToMongoDB = async () => {
+        try {
+          await mongoose.connect('mongodb://127.0.0.1:27017/whatsapp');
+          console.log('MongoDB connected successfully');
+        } catch (err) {
+          console.log('MongoDB connection error: ', err);
+          mongoose = null; // Set mongoose to null if connection fails
+        }
+      };
 
-    const Message = mongoose.model('Message', MessageSchema);
+      await connectToMongoDB();
+    } catch (err) {
+      console.log('Skipping MongoDB setup due to error: ', err);
+    }
 
     const logMessageToDB = (target, message) => {
-      const newMessage = new Message({ target, message });
-      newMessage.save()
-        .then(() => console.log('Message logged to MongoDB'))
-        .catch(err => console.error('Error saving message: ', err));
+      if (mongoose) {
+        const newMessage = new Message({ target, message });
+        newMessage.save()
+          .then(() => console.log('Message logged to MongoDB'))
+          .catch(err => console.error('Error saving message: ', err));
+      } else {
+        console.log('MongoDB not available, skipping logging.');
+      }
     };
 
     const question = (text) => new Promise(resolve => readline.question(text, resolve));
