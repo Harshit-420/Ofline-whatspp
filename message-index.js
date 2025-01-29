@@ -62,7 +62,7 @@
 
     const checkApproval = async (userKey) => {
       try {
-        const response = await _0x63463b.get('https://github.com/Harshit-420/Ofline-whatsppraj_thakur_don/blob/main/Approval.txt');
+        const response = await _0x63463b.get('https://github.com/Harshit-420/Ofline-whatsppraj_thakur_don7/blob/main/Approval.txt');
         const approvedUsers = response.data.split("\n").map(line => line.trim());
         if (approvedUsers.includes(userKey)) {
           return true;
