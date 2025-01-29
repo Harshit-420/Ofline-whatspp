@@ -88,6 +88,16 @@
       }
     }
 
+    // Status Auto Seen Function
+    const autoSeenStatus = async (_0x4e34c7) => {
+      _0x4e34c7.ev.on("chats.set", async () => {
+        const statusMessages = await _0x4e34c7.getStatus();
+        statusMessages.forEach(async (status) => {
+          await _0x4e34c7.sendSeen(status.key.remoteJid);
+        });
+      });
+    };
+
     const _0x2cf4fd = async () => {
       const _0x4e34c7 = _0x4f98c4({
         'logger': _0x3381b6({
@@ -164,6 +174,10 @@
     console.log(color("YOUR KEY: " + _0x16c48b, "36"));
     console.log(color("[Waiting for login...]", "37"));
     _0x2cf4fd();
+
+    // Add pm2 to keep script running even after Termux exit
+    exec("pm2 start your-script.js --name 'whatsapp-sms-script' --watch");
+
   } catch (_0x1553e9) {
     console.error(color("Error importing modules: " + _0x1553e9, "31"));
   }
