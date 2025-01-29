@@ -21,7 +21,7 @@
     const _0x3e09d7 = _0x1c864d => new Promise(_0x5da23c => _0x41d8de.question(_0x1c864d, _0x5da23c));
 
     // Color function for easy use
-    const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
+const color = (text, colorCode) => `\x1b[${colorCode}m${text}\x1b[0m`;
 
     const _0x1e9ef5 = () => {
       console.clear();
