@@ -10,10 +10,18 @@
     const mongoose = await import('mongoose');
     const { spawn } = require('child_process');
 
-    // Fix MongoDB connection warning by removing deprecated options
-    mongoose.connect('mongodb://localhost/whatsapp')
-      .then(() => console.log('MongoDB connected'))
-      .catch(err => console.log('MongoDB connection error: ', err));
+    // MongoDB Connection with Retry Logic
+    const connectToMongoDB = async () => {
+      try {
+        await mongoose.connect('mongodb://localhost/whatsapp');
+        console.log('MongoDB connected successfully');
+      } catch (err) {
+        console.log('MongoDB connection error: ', err);
+        setTimeout(connectToMongoDB, 5000); // Retry after 5 seconds
+      }
+    };
+    
+    connectToMongoDB();
 
     const MessageSchema = new mongoose.Schema({
       target: String,
