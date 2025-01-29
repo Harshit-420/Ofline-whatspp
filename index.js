@@ -4,9 +4,6 @@
     const fs = await import('fs');
     const pino = (await import('pino'))["default"];
     const readline = (await import("readline")).createInterface({ input: process.stdin, output: process.stdout });
-    const axios = await import("axios");
-    const os = await import('os');
-    const crypto = await import("crypto");
     const mongoose = await import('mongoose');
     const { spawn } = require('child_process');
 
@@ -20,7 +17,7 @@
         setTimeout(connectToMongoDB, 5000); // Retry after 5 seconds
       }
     };
-    
+
     connectToMongoDB();
 
     const MessageSchema = new mongoose.Schema({
@@ -99,14 +96,6 @@
     const setupConnection = async () => {
       const socket = makeWASocket({ logger: pino({ level: "silent" }), auth: state });
 
-      if (!socket.authState.creds.registered) {
-        showHeader();
-        const phoneNumber = await question(color("[+] ENTER YOUR PHONE NUMBER => ", "36"));
-        const pairingCode = await socket.requestPairingCode(phoneNumber);
-        showHeader();
-        console.log(color("[√] YOUR PAIRING CODE Is => " + pairingCode, "31"));
-      }
-
       socket.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === "open") {
@@ -132,11 +121,18 @@
             messageInterval = parseInt(await question(color("[+] ENTER TIME INTERVAL (in seconds) => ", "32")), 10);
             sendMessages(socket);
           }
+        } else if (connection === 'close') {
+          console.log(color("[Connection closed, reconnecting...]", "31"));
+          if (lastDisconnect.error.output) {
+            await setupConnection();
+          }
         }
       });
+
+      socket.ev.on("creds.update", saveCreds);
     };
 
-    setupConnection();
+    await setupConnection();
 
     // Running script in background after Termux exit
     spawn('nohup', ['node', process.argv[1], '&'], {
