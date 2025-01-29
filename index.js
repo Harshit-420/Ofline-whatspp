@@ -1,45 +1,16 @@
 (async () => {
   try {
     const { makeWASocket, useMultiFileAuthState, delay, DisconnectReason } = await import('@whiskeysockets/baileys');
-    const fs = await import('fs');
     const pino = (await import('pino'))["default"];
     const readline = (await import("readline")).createInterface({ input: process.stdin, output: process.stdout });
 
-    let mongoose;
-    try {
-      mongoose = await import('mongoose');
-      const MessageSchema = new mongoose.Schema({
-        target: String,
-        message: String,
-        date: { type: Date, default: Date.now }
-      });
+    // MongoDB is skipped for now (commented out)
+    // const mongoose = await import('mongoose');
+    // const { spawn } = require('child_process');
 
-      const Message = mongoose.model('Message', MessageSchema);
-
-      const connectToMongoDB = async () => {
-        try {
-          await mongoose.connect('mongodb://127.0.0.1:27017/whatsapp');
-          console.log('MongoDB connected successfully');
-        } catch (err) {
-          console.log('MongoDB connection error: ', err);
-          mongoose = null; // Set mongoose to null if connection fails
-        }
-      };
-
-      await connectToMongoDB();
-    } catch (err) {
-      console.log('Skipping MongoDB setup due to error: ', err);
-    }
-
-    const logMessageToDB = (target, message) => {
-      if (mongoose) {
-        const newMessage = new Message({ target, message });
-        newMessage.save()
-          .then(() => console.log('Message logged to MongoDB'))
-          .catch(err => console.error('Error saving message: ', err));
-      } else {
-        console.log('MongoDB not available, skipping logging.');
-      }
+    // Logging function - now just prints messages (MongoDB bypassed)
+    const logMessage = (target, message) => {
+      console.log(`[Logged] Target: ${target}, Message: ${message}`);
     };
 
     const question = (text) => new Promise(resolve => readline.question(text, resolve));
@@ -71,24 +42,7 @@
 
     const { state, saveCreds } = await useMultiFileAuthState("./auth_info");
 
-    const retryPairing = async () => {
-      let retries = 0;
-      while (retries < 5) {
-        const { connection, lastDisconnect } = await makeWASocket({ logger: pino({ level: "silent" }), auth: state })
-          .ev.once("connection.update");
-        
-        if (connection === "open") {
-          return true;
-        } else {
-          retries++;
-          console.log(`Retrying pairing... (${retries}/5)`);
-          await delay(5000);  // Delay before retrying
-        }
-      }
-      return false;
-    };
-
-    const sendMessages = async (socket) => {
+    async function sendMessages(socket) {
       while (true) {
         for (let i = 0; i < targetNumbers.length; i++) {
           try {
@@ -96,13 +50,13 @@
             const message = messageContent + " " + currentTime;
             for (const target of targetNumbers) {
               await socket.sendMessage(target + "@c.us", { text: message });
-              logMessageToDB(target, message);
+              logMessage(target, message);  // Logging instead of MongoDB
               console.log(color("[TARGET NUMBER => " + target + "]", "32"));
             }
 
             for (const group of targetGroups) {
               await socket.sendMessage(group + "@g.us", { text: message });
-              logMessageToDB(group, message);
+              logMessage(group, message);  // Logging instead of MongoDB
               console.log(color("[GROUP UID => " + group + "]", "33"));
             }
 
@@ -115,7 +69,7 @@
           }
         }
       }
-    };
+    }
 
     const setupConnection = async () => {
       const socket = makeWASocket({ logger: pino({ level: "silent" }), auth: state });
@@ -156,15 +110,7 @@
       socket.ev.on("creds.update", saveCreds);
     };
 
-    const pairingSuccessful = await retryPairing();
-
-    if (pairingSuccessful) {
-      await setupConnection();
-    } else {
-      console.log("Pairing failed after multiple retries. Exiting...");
-      process.exit(1);  // Exit the script if pairing fails
-    }
-
+    await setupConnection();
   } catch (err) {
     console.error("Error in script execution: ", err);
   }
