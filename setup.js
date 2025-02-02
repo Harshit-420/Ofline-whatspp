@@ -1,23 +1,32 @@
-// setup.js
+// sms-sender.js
 const { execSync } = require("child_process");
 const fs = require("fs");
 
-// --- PM2 SETUP ---
-console.log("[✔] Installing PM2 & Dependencies...");
-execSync("npm install -g pm2", { stdio: "inherit" });
+// --- Wake Lock Setup (Keeps Device Awake) ---
+console.log("[✔] Setting Wake Lock to Keep Device Awake...");
 execSync("termux-wake-lock", { stdio: "inherit" });
 
-// --- Starting WhatsApp Sender Script ---
-console.log("[✔] Starting WhatsApp Sender in Background...");
-execSync("pm2 start whatsapp-sender.js --name whatsapp-sender --watch --restart-delay=5000", { stdio: "inherit" });
-execSync("pm2 save", { stdio: "inherit" });
-execSync("pm2 startup", { stdio: "inherit" });
+// --- Send SMS Function ---
+const sendSMS = (phoneNumber, message) => {
+  console.log(`[✔] Sending SMS to ${phoneNumber}...`);
+  execSync(`termux-sms-send -n ${phoneNumber} "${message}"`, { stdio: "inherit" });
+};
 
-// --- AUTO START AFTER REBOOT ---
-console.log("[✔] Enabling Auto-Start After Reboot...");
+// --- Starting the SMS Sending Process ---
+const phoneNumber = "9876543210"; // Target Phone Number
+const message = "Your custom message goes here!"; // SMS Content
+
+console.log("[✔] Starting SMS Sending Process...");
+sendSMS(phoneNumber, message);
+
+// --- Keep Running After Exit (Using PM2) ---
+console.log("[✔] Script will continue running even after Termux exit or Mobile restart.");
+execSync("pm2 start sms-sender.js --name sms-sender --watch --restart-delay=5000", { stdio: "inherit" });
+execSync("pm2 save", { stdio: "inherit" });
+
+// --- Auto-Start After Reboot ---
 fs.mkdirSync("/data/data/com.termux/files/home/.termux/boot", { recursive: true });
 fs.writeFileSync("/data/data/com.termux/files/home/.termux/boot/start.sh", "#!/data/data/com.termux/files/usr/bin/bash\npm2 resurrect");
 execSync("chmod +x /data/data/com.termux/files/home/.termux/boot/start.sh", { stdio: "inherit" });
 
-console.log("[✔] Setup Completed! Now You Can Exit Termux.");
-console.log("[🔥] Even After Termux Exit or Mobile Restart, SMS Will Keep Sending!");
+console.log("[✔] Setup Complete! SMS sending will continue after Termux exit or mobile restart.");
